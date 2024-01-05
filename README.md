@@ -3,14 +3,13 @@
 
   <h1>🌌 DimensionDB</h1>
   <p>
-    DimensionDB is a hobby database built on lock-free multi-dimensional linked lists
+    Hobby project to learn more about database internals and a study of how well lock-free multi-dimensional linked lists work as a database foundation
   </p>
 <sub>🚧 UNSTABLE 🚧</sub>
 
 </div>
 
-Items in `DimensionDB` are stored in lock-free multi-dimensional linked lists.
-This makes it possible to achieve logarithmic search performance while allowing many threads to operate on the list in parallel. Together with lock-free transactional theory (LFTT), this can handle atomic transactions in a lock-free way as well.
+Items in `DimensionDB` are stored in lock-free multi-dimensional linked lists with `log(n)` lookup. Together with lock-free transactional theory (LFTT) this can handles atomic transactions in a lock-free way as well.
 
 The list have several benefits over other BTree-style indexes. For example, it doesn't require rebalancing.
 We also get predictable partitions suitable for distributing the database and we have some interesting memory layout possibilities with the fixed key sizes and dimensions.
