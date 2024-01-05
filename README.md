@@ -19,5 +19,6 @@ We also get predictable partitions suitable for distributing the database and we
 
 - The ebr implementation is taken from [sled](https://github.com/spacejam/sled/), along with inspiration on how to structure
 lock-free data structures.
+- Initial POC architecture from https://github.com/pingcap/talent-plan/
 - Zachary Painter, Christina Peterson, Damian Dechev. _Lock-Free Transactional Adjacency List._
 - Deli Zhang and Damian Dechev. _An efficient lock-free logarithmic search data structure based on multi-dimensional list._
