@@ -288,11 +288,12 @@ impl<const DIM: usize, T, C: IsElement<DIM, T>> List<DIM, T, C> {
             // Locate the postion to insert the node at in the list
             let mut p = self.locate_pred(entry.coords, guard);
 
-            if p.dc == DIM && (p.curr.tag() & Self::DEL == 0) {
-                // Node already exists
-                C::finalize(entry, guard);
-                return;
-            }
+            // Enable this to forbid updates
+            // if p.dc == DIM && (p.curr.tag() & Self::DEL == 0) {
+            //     // Node already exists
+            //     C::finalize(entry, guard);
+            //     return;
+            // }
 
             // If we found some node, load the adoption description
             if let Some(curr) = p.curr.as_ref() {

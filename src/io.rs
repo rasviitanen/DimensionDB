@@ -1,8 +1,4 @@
-use std::{
-    io::{self, BufReader, BufWriter, Read, Seek, SeekFrom, Write},
-    ops::Range,
-    sync::Arc,
-};
+use std::io::{self, BufReader, BufWriter, Read, Seek, SeekFrom, Write};
 
 #[derive(Debug)]
 pub struct BufReaderWithPos<R: Read + Seek> {
