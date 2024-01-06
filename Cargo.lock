@@ -7,8 +7,10 @@ name = "DimensionDB"
 version = "0.1.0"
 dependencies = [
  "anyhow",
+ "libc",
  "parking_lot",
  "rayon",
+ "rio",
  "serde",
  "serde_json",
  "tokio",
@@ -273,6 +275,15 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "4722d768eff46b75989dd134e5c353f0d6296e5aaa3132e776cbdb56be7731aa"
 dependencies = [
  "bitflags",
+]
+
+[[package]]
+name = "rio"
+version = "0.9.4"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "9e98c25665909853c07874301124482754434520ab572ac6a22e90366de6685b"
+dependencies = [
+ "libc",
 ]
 
 [[package]]

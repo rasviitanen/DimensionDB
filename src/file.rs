@@ -1,4 +1,6 @@
 //! Very inefficient emulated files until we can have efficient IO
+use std::path::Path;
+use std::{fs::OpenOptions, io::Result, os::unix::fs::OpenOptionsExt};
 
 use std::{
     cmp,
@@ -8,6 +10,11 @@ use std::{
 
 use parking_lot::RwLock;
 
+const CHUNK_SIZE: u64 = 4096 * 256;
+
+#[repr(align(4096))]
+struct Aligned([u8; CHUNK_SIZE as usize]);
+
 #[derive(Default, Debug, serde::Serialize, serde::Deserialize)]
 struct RawFile {
     pub inner: Vec<u8>,
@@ -16,12 +23,30 @@ struct RawFile {
 #[derive(Default, Clone)]
 pub struct DbFile {
     pos: u64,
-    inner: Arc<RwLock<RawFile>>,
+    memory: Arc<RwLock<RawFile>>,
+    // We should only have one here.. to be fixed
+    file: Option<Arc<std::fs::File>>,
 }
 
 impl DbFile {
+    pub fn open(path: impl AsRef<Path>) -> anyhow::Result<Self> {
+        let file = OpenOptions::new()
+            .read(true)
+            .write(true)
+            .create(true)
+            .truncate(true)
+            .custom_flags(libc::O_DIRECT)
+            .open(path)?;
+
+        Ok(Self {
+            pos: 0,
+            memory: Default::default(),
+            file: Some(Arc::new(file)),
+        })
+    }
+
     pub fn size(&self) -> usize {
-        self.inner.read().inner.len()
+        self.memory.read().inner.len()
     }
 
     pub async fn save(&mut self) {
@@ -31,8 +56,8 @@ impl DbFile {
 
 impl Read for DbFile {
     fn read(&mut self, buf: &mut [u8]) -> io::Result<usize> {
-        let amt = cmp::min(self.pos, self.inner.read().inner.len() as u64);
-        let mut fill_buff = &self.inner.read().inner[(amt as usize)..];
+        let amt = cmp::min(self.pos, self.memory.read().inner.len() as u64);
+        let mut fill_buff = &self.memory.read().inner[(amt as usize)..];
         let n = Read::read(&mut fill_buff, buf)?;
         self.pos += n as u64;
 
@@ -43,16 +68,16 @@ impl Read for DbFile {
 impl Write for DbFile {
     fn write(&mut self, buf: &[u8]) -> io::Result<usize> {
         let pos: usize = self.pos as usize;
-        let len: usize = self.inner.read().inner.len();
+        let len: usize = self.memory.read().inner.len();
         if len < pos {
-            self.inner.write().inner.resize(pos, 0);
+            self.memory.write().inner.resize(pos, 0);
         }
 
         {
-            let space = self.inner.read().inner.len() - pos;
+            let space = self.memory.read().inner.len() - pos;
             let (left, right) = buf.split_at(cmp::min(space, buf.len()));
-            self.inner.write().inner[pos..pos + left.len()].copy_from_slice(left);
-            self.inner.write().inner.extend_from_slice(right);
+            self.memory.write().inner[pos..pos + left.len()].copy_from_slice(left);
+            self.memory.write().inner.extend_from_slice(right);
         }
 
         // Bump us forward
@@ -73,7 +98,7 @@ impl Seek for DbFile {
                 self.pos = n;
                 return Ok(n);
             }
-            SeekFrom::End(n) => (self.inner.read().inner.len() as u64, n),
+            SeekFrom::End(n) => (self.memory.read().inner.len() as u64, n),
             SeekFrom::Current(n) => (self.pos, n),
         };
         let new_pos = if offset >= 0 {

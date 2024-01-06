@@ -9,6 +9,7 @@ use std::{
 };
 
 use parking_lot::Mutex;
+use rio::Rio;
 use tokio::sync::{oneshot, RwLock};
 
 use crate::{
@@ -19,6 +20,7 @@ use crate::{
 
 pub struct Engine {
     current_gen: u64,
+    rio: Rio,
     index: Arc<MdList<String, CommandPos>>,
     pool: Arc<rayon::ThreadPool>,
     readers: Arc<MdList<usize, Mutex<crate::io::BufReaderWithPos<DbFile>>>>, // TODO: impl prioq ontop of this with better readers
@@ -28,7 +30,7 @@ pub struct Engine {
 impl Engine {
     pub fn new(threads: usize) -> Self {
         let current_gen = 1;
-        let file = DbFile::default();
+        let file = DbFile::open("gen1").unwrap();
 
         let readers = Arc::new(MdList::default());
         readers.insert(
@@ -51,6 +53,7 @@ impl Engine {
                     .build()
                     .unwrap(),
             ),
+            rio: rio::new().unwrap(),
             readers,
             writers,
         }
