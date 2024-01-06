@@ -87,7 +87,6 @@ impl Engine {
                 if curr_unallocated < content_len {
                     // FIXME:(rasviitanen) make concurrent
                     cell_ptr.store((page + 1) * PAGE_SIZE, Ordering::SeqCst);
-                    count.store(0, Ordering::SeqCst);
                     unallocated.store(PAGE_SIZE, Ordering::SeqCst);
                 }
 
@@ -95,13 +94,10 @@ impl Engine {
                 let pos = writer.pos;
                 // serde_json::to_writer(&mut writer, &value)?;
                 let _ = writer.write(value.as_bytes());
-                writer.flush()?;
 
                 cell_ptr.fetch_add(writer.pos - pos, Ordering::SeqCst);
-
                 index.insert(key.as_ref(), (PageId(page), pos..writer.pos).into());
                 let unallocated_end = unallocated.fetch_sub(content_len, Ordering::SeqCst);
-                count.fetch_add(1, Ordering::SeqCst);
                 let _ = writer.seek(SeekFrom::Current(unallocated_end as i64));
                 // serde_json::to_writer(&mut writer, &key)?;
                 let _ = writer.write(key.as_bytes());
@@ -154,31 +150,31 @@ impl From<(PageId, Range<u64>)> for CommandPos {
 mod tests {
     use super::*;
 
-    // #[tokio::test]
-    // async fn test_update() -> anyhow::Result<()> {
-    //     let engine = Engine::new(1);
-    //     engine
-    //         .set(String::from("key0"), String::from("value0"))
-    //         .await?;
+    #[tokio::test]
+    async fn test_update() -> anyhow::Result<()> {
+        let engine = Engine::new(1);
+        engine
+            .set(String::from("key0"), String::from("value0"))
+            .await?;
 
-    //     engine
-    //         .set(String::from("key1"), String::from("value1"))
-    //         .await?;
+        engine
+            .set(String::from("key1"), String::from("value1"))
+            .await?;
 
-    //     engine
-    //         .set(String::from("key1"), String::from("value1.v2"))
-    //         .await?;
+        engine
+            .set(String::from("key1"), String::from("value1.v2"))
+            .await?;
 
-    //     assert_eq!(
-    //         engine.get(String::from("key0")).await?,
-    //         Some(String::from("value0"))
-    //     );
-    //     assert_eq!(
-    //         engine.get(String::from("key1")).await?,
-    //         Some(String::from("value1.v2"))
-    //     );
-    //     Ok(())
-    // }
+        assert_eq!(
+            engine.get(String::from("key0")).await?,
+            Some(String::from("value0"))
+        );
+        assert_eq!(
+            engine.get(String::from("key1")).await?,
+            Some(String::from("value1.v2"))
+        );
+        Ok(())
+    }
 
     #[tokio::test]
     async fn test_allocate_page() -> anyhow::Result<()> {
