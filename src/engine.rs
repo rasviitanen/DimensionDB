@@ -23,8 +23,6 @@ pub struct Engine {
     pool: Arc<rayon::ThreadPool>,
     // Dynamic value pointer in this page
     cell_ptr: Arc<AtomicU64>,
-    // Cell count for this page, to know how to store keys in the page trailer
-    cell_count: Arc<AtomicU64>,
     // Size of unallocated memory in the page
     unallocated: Arc<AtomicU64>,
     file: Arc<PageSlottedFile>,
@@ -46,7 +44,6 @@ impl Engine {
             ring,
             file,
             cell_ptr: Default::default(),
-            cell_count: Default::default(),
             unallocated: Arc::new(AtomicU64::new(PAGE_SIZE)),
         }
     }
@@ -78,7 +75,6 @@ impl Engine {
         let content_len = (value.len() + key.len()) as u64;
         let index = self.index.clone();
         let cell_ptr = self.cell_ptr.clone();
-        let count = self.cell_count.clone();
         let unallocated = self.unallocated.clone();
         let (tx, rx) = oneshot::channel();
         self.pool.spawn(move || {
