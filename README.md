@@ -9,9 +9,7 @@
 
 </div>
 
-Items in `DimensionDB` are stored in lock-free multi-dimensional linked lists with `log(n)` lookup. Together with lock-free transactional theory (LFTT) this can handles atomic transactions in a lock-free way as well.
-
-The list have several benefits over other BTree-style indexes. For example, it doesn't require rebalancing.
+The list has several benefits over other BTree-style indexes. For example, it doesn't require rebalancing.
 We also get predictable partitions suitable for distributing the database and we have some interesting memory layout possibilities with the fixed key sizes and dimensions.
 
 ## Based on
